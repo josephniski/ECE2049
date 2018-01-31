@@ -468,9 +468,9 @@ int checkCard(int cardInput)
     return cardVal;
 }
 
-//I added text here to test a thing
-
 //if I add this here, will it change things??
+
+//this is for a pull request
 
 
 
