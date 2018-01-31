@@ -470,6 +470,8 @@ int checkCard(int cardInput)
 
 //I added text here to test a thing
 
+//if I add this here, will it change things??
+
 
 
 
