@@ -468,9 +468,6 @@ int checkCard(int cardInput)
     return cardVal;
 }
 
-//I added text here to test a thing
-
-
 
 
 /* Past Failed ideas
@@ -490,3 +487,92 @@ int checkCard(int cardInput)
                     masterDeck[random_index] = temp;
                 }
 */
+
+
+
+
+
+checkSuit -> returns suit of card
+checkCard -> returns value of card 
+getVal -> returns printed val of card for dispArray
+int arrayVal = 0;
+void populateHand(int inputCard)//12 //26
+{
+    for(int k = 0; k < 4; k++)
+    {
+        if((k % 4) == 0)
+        {
+            dispArray[arraVal] = getVal(inputCard);//'K' //
+            arrayVal++;
+        }
+        else if((k % 4) == 1)
+        {
+            dispArray[arraVal] = '-';//-
+            arrayVal++;
+        }
+        else if((k % 4) == 2)
+        {
+            dispArray[arraVal] = checkSuit(inputCard);//'H'
+            arrayVal++;
+        }
+        else if((k % 4) == 3)
+        {
+            dispArray[arraVal] = ' ';// 
+            arrayVal++;
+        }
+    }
+}
+
+void populatePlayerHand(int inputCard)//12 //26
+{
+    for(int k = 0; k < 4; k++)
+    {
+        if((k % 4) == 0)
+        {
+            dispArrayPlayer[arraVal] = getVal(inputCard);//'K' //
+            arrayVal++;
+        }
+        else if((k % 4) == 1)
+        {
+            dispArrayPlayer[arraVal] = '-';//-
+            arrayVal++;
+        }
+        else if((k % 4) == 2)
+        {
+            dispArrayPlayer[arraVal] = checkSuit(inputCard);//'H'
+            arrayVal++;
+        }
+        else if((k % 4) == 3)
+        {
+            dispArrayPlayer[arraVal] = ' ';// 
+            arrayVal++;
+        }
+    }
+}
+
+void populateCPUHand(int inputCard)//12 //26
+{
+    for(int k = 0; k < 4; k++)
+    {
+        if((k % 4) == 0)
+        {
+            dispArrayCPU[arraVal] = getVal(inputCard);//'K' //
+            arrayVal++;
+        }
+        else if((k % 4) == 1)
+        {
+            dispArrayCPU[arraVal] = '-';//-
+            arrayVal++;
+        }
+        else if((k % 4) == 2)
+        {
+            dispArrayCPU[arraVal] = checkSuit(inputCard);//'H'
+            arrayVal++;
+        }
+        else if((k % 4) == 3)
+        {
+            dispArrayCPU[arraVal] = ' ';// 
+            arrayVal++;
+        }
+    }
+}
