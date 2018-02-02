@@ -1,3 +1,4 @@
+
 //Drew Robert & Joseph Niski
 //ECE 2049
 //Lab 1
@@ -6,36 +7,48 @@
 #include <stdlib.h>
 #include "stdbool.h"
 #include "peripherals.h"
-
+#include <string.h>
+#include <time.h>
 
 // Function Prototypes
 void swDelay(char numLoops);
-void populateDeck();
-void cutDeck(int card);
-void dealCards();
+void dealHand(int cutNum);
+void populateHandPlayer(int inputCard);
+void populateHandCPU(int inputCard);
+unsigned char checkSuit(int card);
+int checkCard(int cardInput);
+void dealHand(int cutNum);
+unsigned char getVal(int inputCard);
+//dealHand -> populateHand
 
 // Global Variables
 unsigned char currKey = 0, dispSz = 3;
-unsigned char dispThree[3];
-unsigned char cutVals[2];
+unsigned char cutVals[2] = {0, 0};
 int state = 0;
 int i = 0;
-int yourBetVal;
-int cpuBetVal;
+unsigned char yourBetVal;
+unsigned char cpuBetVal;
 int difference;
-int handCPU[5];
-int handPlayer[5] ;
+unsigned char handCPU[5] = {0, 0, 0, 0, 0};
+unsigned char handPlayer[5]= {0, 0, 0, 0, 0};
 int pastNumbers[52];
 int card;
-unsigned char suit;
+unsigned char suit[4][1] = { "H", "D", "C", "S" };
 int cardVal;
 int i, j, k;
 int random_index;
 int inputVal;
-_Bool pastNum;
 int cutNumber;
-int halfDeck[15][4];
-int masterDeck[52] =  {};
+int cardVal;
+int deck[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int num = 0;
+int n = 0;
+int once = 1;
+unsigned char dispArrayCPU[16] = {' '};
+unsigned char dispArrayPlayer[16] = {' '};
+int arrayValCPU = 0;
+int arrayValPlayer = 0;
+int mod13Card = 0;
 
 // Main
 void main(void)
@@ -43,14 +56,14 @@ void main(void)
 {
     WDTCTL = WDTPW | WDTHOLD; // Stop watchdog timer. Always need to stop this!!
                               // You can then configure it properly, if desired
-    dispThree[0] = " ";
-    dispThree[2] = " ";
 
     initLeds();
     configDisplay();
     configKeypad();
 
     currKey = getKey();
+
+    //populateDeck();
 
     // *** Intro Screen ***
     Graphics_clearDisplay(&g_sContext); // Clear the display
@@ -65,6 +78,7 @@ void main(void)
 
             currKey = getKey();
 
+            while (once == 1){
             // Write some text to the display
             Graphics_drawStringCentered(&g_sContext, "MSP430",
             AUTO_STRING_LENGTH,
@@ -82,7 +96,6 @@ void main(void)
             AUTO_STRING_LENGTH,
                                         48, 45,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, masterDeck[30], AUTO_STRING_LENGTH, 48, 65,OPAQUE_TEXT);
 
             // Draw a box around everything because it looks nice
             Graphics_Rectangle box = { .xMin = 3, .xMax = 93, .yMin = 3, .yMax =
@@ -95,11 +108,14 @@ void main(void)
             // Since this is a slow operation, it is best to refresh (or "flush") only after
             // we are done drawing everything we need.
             Graphics_flushBuffer(&g_sContext);
+            once = 0;
+            } //end once loop
 
             if (currKey == '*')
             {
                 state = 1;
                 Graphics_clearDisplay(&g_sContext); // Clear the display
+                once = 1;
             }
 
             break;
@@ -108,6 +124,7 @@ void main(void)
 
             currKey = getKey();
 
+            while (once == 1){
             // Write some text to the display
             Graphics_drawStringCentered(&g_sContext, "Enter a Number",
             AUTO_STRING_LENGTH,
@@ -134,9 +151,11 @@ void main(void)
                                         48, 85,
                                         TRANSPARENT_TEXT);
 
-            Graphics_drawRectangle(&g_sContext, &box);
-
             Graphics_flushBuffer(&g_sContext);
+            once = 0;
+            } // end while once loop
+
+
 
             while (i < 2)
             {
@@ -152,15 +171,13 @@ void main(void)
 
             } //end while loop
 
-            inputVal = ((cutVals[0] * 10) - 0x30) + (cutVals[1] - 0x30);
+            inputVal = ((cutVals[0] * 10) + 0x30) + (cutVals[1] + 0x30);
 
             setLeds(inputVal);
 
-            //cutDeck(inputVal);
-
             // Draw the new character to the display
             Graphics_drawStringCentered(&g_sContext, cutVals, 2, 48, 65,
-            OPAQUE_TEXT);
+            TRANSPARENT_TEXT);
 
             // Refresh the display so it shows the new data
             Graphics_flushBuffer(&g_sContext);
@@ -169,36 +186,45 @@ void main(void)
             {
                 Graphics_clearDisplay(&g_sContext); // Clear the display
                 state = 2;
+                once = 1;
             }
 
             break;
 
         case 2: // Shuffle & Deal
-            //dealCards();
 
             currKey = getKey();
 
+            dealHand(inputVal);
+
+            populateHandCPU(deck[0]);
+            populateHandPlayer(deck[1]);
+            //populateHandCPU(deck[2]);
+            populateHandPlayer(deck[3]);
+
             //Display Deal
+            while (once == 1){
             Graphics_drawStringCentered(&g_sContext, "CPU Hand:",
                                         AUTO_STRING_LENGTH, 48, 15,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, handCPU[0], AUTO_STRING_LENGTH, 48, 25,
-                                        OPAQUE_TEXT);
-            Graphics_drawStringCentered(&g_sContext, "XXX:", AUTO_STRING_LENGTH,
+            Graphics_drawStringCentered(&g_sContext, dispArrayCPU, 4, 48, 25,
+                                        TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "XXX", AUTO_STRING_LENGTH,
                                         48, 35, TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "Your Hand:",
                                         AUTO_STRING_LENGTH, 48, 55,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, handPlayer[0], 1, 48, 65,
-                                        OPAQUE_TEXT);
-            Graphics_drawStringCentered(&g_sContext, handPlayer[1], 1, 48, 75,
-                                        OPAQUE_TEXT);
+           Graphics_drawStringCentered(&g_sContext, dispArrayPlayer, 8, 48, 65,
+                                        TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "'#' to Cont.",
                                         AUTO_STRING_LENGTH, 48, 85,
                                         TRANSPARENT_TEXT);
 
             // Refresh the display so it shows the new data
             Graphics_flushBuffer(&g_sContext);
+            once = 0;
+
+            }// end while once loop
 
             if (currKey == '#')
             {
@@ -209,6 +235,8 @@ void main(void)
             break;
 
         case 3: // Betting 1
+
+            currKey = getKey();
 
             Graphics_drawStringCentered(&g_sContext, "Enter Bet:",
             AUTO_STRING_LENGTH,
@@ -335,7 +363,7 @@ void main(void)
             AUTO_STRING_LENGTH,
                                         48, 15,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, "XXX:", AUTO_STRING_LENGTH,
+            Graphics_drawStringCentered(&g_sContext, "XXX", AUTO_STRING_LENGTH,
                                         48, 35, TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "Your Hand:",
             AUTO_STRING_LENGTH,
@@ -384,111 +412,164 @@ void swDelay(char numLoops)
     }
 }
 
-void cutDeck(int card)
-{
-    cutNumber = 52 - card;
-    for (i = 0; i < card; i++)
-    {
-        halfDeck[i] = masterDeck[i];//assign the cut cards
-    }
-
-    for (k = 0; k < cutNumber; k++)
-    {
-        masterDeck[k] = masterDeck[k + card]; //shift the cards
-    }
-
-    for (j = 0; j < card; j++)
-    {
-        masterDeck[j + cutNumber] = halfDeck[j];   //put the cut cards on bottom
-    }
-}
-
-void dealCards()
-{
-    for (i = 0; i < 52; i++) //loop through 52 cards to fill a deck
-    {
-        while (pastNum == true) //run the stuff inside as long as the randomly generated number is different
-        {
-            random_index = rand(); //generated random number
-            random_index = random_index % 52; //makes it out of 52
-
-
-
-
-        }
-        pastNum = true;
-
-    }
-    handCPU[0] = masterDeck[0];
-    handCPU[1] = masterDeck[1];
-    handPlayer[0] = masterDeck[2];
-    handPlayer[1] = masterDeck[3];
-}
-
-//0-13 = A-K Hearts, 13-25 = Clubs, 26-38 = Diamonds, 39-51 = Spades
 /*Checking Suit*/
-char checkSuit(int card)
+//Returns the suit of the card in ascii to be put in dispArray
+unsigned char checkSuit(int card)
 {
-    char suit[10] = " ";
-    if (card >= 0 && card <= 12)
+    card = card/13;
+
+    if (card >= 0 && card < 1)
     {
-        suit = "Hearts";
+        return 'H';
     }
-    else if (card >= 13 && card <= 25)
+    else if (card >= 1 && card < 2)
     {
-        suit = "Diamonds";
+        return 'C';
     }
-    else if (card >= 26 && card <= 38)
+    else if (card >= 2 && card <= 3)
     {
-        suit = "Clubs";
+        return 'S';
     }
-    else if (card >= 39 && card <= 51)
+    else if (card >= 3 && card < 4)
     {
-        suit = "Spades";
+        return 'D';
     }
-    return suit;
+
+
 }
 
 /*Checking Card Val*/
+//A = 0, 2 = 1, ... , K = 13.
 int checkCard(int cardInput)
 {
-    cardInput = card % 13;
-    if (cardInput > 0 && cardInput < 10)
+    card = cardInput % 13;
+
+    if (card > 0 && card < 9)
     {
-        cardVal = cardInput + 1;
+        cardVal = card + 1;
     }
-    else if (cardInput == 0)
+    else if (card == 0)
     {
         cardVal = 1;
     }
-    else if (cardInput <= 10)
+    else if (card >= 9)
     {
         cardVal = 10;
     }
     return cardVal;
 }
 
+
+void dealHand(int cutNum)
+{
+    int n = 11;
+   /* Initializes random number generator */
+    srand((unsigned) cutNum);
+    for(i = 0 ; i < n ; i++)
+    {
+        num = rand() % 52;
+        for(j = 0; j < 52; j++)
+        {
+            if(deck[j] != num)
+            {
+                deck[i] = num;
+            }
+        }
+    }
+
+}
+
+//inputCard comes from dealHand
+//Returns the number value of the card in ascii to be put in dispArray
+unsigned char getVal(int inputCard){
+
+    mod13Card = inputCard % 13;
+
+    cardVal = checkCard(inputCard);
+
+    unsigned char printVal;
+
+    if (mod13Card < 10 && mod13Card >= 1){
+        printVal = mod13Card + 0x31;
+    }
+
+    else if (mod13Card == 0){
+        printVal = 'A';
+    }
+
+<<<<<<< HEAD:lab1.c
 //if I add this here, will it change things??
 
 //this is for a pull request
 
+=======
+    else if (cardVal == 10){
+        if (mod13Card == 9)
+            printVal = 'T';
+        else if (mod13Card == 10)
+            printVal = 'J';
+        else if (mod13Card == 11)
+            printVal = 'Q';
+        else if (mod13Card == 12)
+            printVal = 'K';
+    }
+
+    return printVal;
+}
+
+void populateHandPlayer(int inputCard)//12 //26
+{
+    for(k = 0; k < 4; k++)
+    {
+        if(k  == 0)
+        {
+            dispArrayPlayer[arrayValPlayer] = getVal(inputCard);//'K' //
+            arrayValPlayer++;
+        }
+        else if(k == 1)
+        {
+            dispArrayPlayer[arrayValPlayer] = '-';//-
+            arrayValPlayer++;
+        }
+        else if(k == 2)
+        {
+            dispArrayPlayer[arrayValPlayer] = checkSuit(inputCard);//'H'
+            arrayValPlayer++;
+        }
+        else if(k == 3)
+        {
+            dispArrayPlayer[arrayValPlayer] = ' ';//
+            arrayValPlayer++;
+        }
+    }
+}
+>>>>>>> origin/branchTest:ece2049c18_lab1_ddrobert_jniski/main.c
+
+void populateHandCPU(int inputCard)//12 //26
+{
+    for(k = 0; k < 4; k++)
+    {
+        if(k  == 0)
+        {
+            dispArrayCPU[arrayValCPU] = getVal(inputCard);//'K' //
+            arrayValCPU++;
+        }
+        else if(k == 1)
+        {
+            dispArrayCPU[arrayValCPU] = '-';//-
+            arrayValCPU++;
+        }
+        else if(k == 2)
+        {
+            dispArrayCPU[arrayValCPU] = checkSuit(inputCard);//'H'
+            arrayValCPU++;
+        }
+        else if(k == 3)
+        {
+            dispArrayCPU[arrayValCPU] = ' ';//
+            arrayValCPU++;
+        }
+    }
+}
 
 
-
-/* Past Failed ideas
- *
- * for (j = 0; j < 52; j++) //starts another loop to check the previously generated numbers
-            {
-                if (random_index == pastNumbers[j])
-                { //if the random number has been generated before, exit the while loop
-                    i = i - 1; //go back an index in the original loop so it generates the proper amount of cards
-                    pastNum = false;
-                }
-                else
-                { //otherwise fill the past numbers array and start randomizing the deck
-                    random_index = pastNumbers[i];
-                    unsigned char temp = masterDeck[i];
-                    masterDeck[i] = masterDeck[random_index];
-                    masterDeck[random_index] = temp;
-                }
-*/
