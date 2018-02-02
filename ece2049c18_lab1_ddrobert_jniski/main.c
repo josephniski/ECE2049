@@ -13,6 +13,13 @@
 // Function Prototypes
 void swDelay(char numLoops);
 void dealHand(int cutNum);
+void populateHandPlayer(int inputCard);
+void populateHandCPU(int inputCard);
+unsigned char checkSuit(int card);
+int checkCard(int cardInput);
+void dealHand(int cutNum);
+unsigned char getVal(int inputCard);
+//dealHand -> populateHand
 
 // Global Variables
 unsigned char currKey = 0, dispSz = 3;
@@ -37,6 +44,11 @@ int deck[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int num = 0;
 int n = 0;
 int once = 1;
+unsigned char dispArrayCPU[16] = {' '};
+unsigned char dispArrayPlayer[16] = {' '};
+int arrayValCPU = 0;
+int arrayValPlayer = 0;
+int mod13Card = 0;
 
 // Main
 void main(void)
@@ -112,6 +124,7 @@ void main(void)
 
             currKey = getKey();
 
+            while (once == 1){
             // Write some text to the display
             Graphics_drawStringCentered(&g_sContext, "Enter a Number",
             AUTO_STRING_LENGTH,
@@ -138,10 +151,9 @@ void main(void)
                                         48, 85,
                                         TRANSPARENT_TEXT);
 
-
-
-
             Graphics_flushBuffer(&g_sContext);
+            once = 0;
+            } // end while once loop
 
 
 
@@ -159,13 +171,13 @@ void main(void)
 
             } //end while loop
 
-            inputVal = ((cutVals[0] * 10) - 0x30) + (cutVals[1] - 0x30);
+            inputVal = ((cutVals[0] * 10) + 0x30) + (cutVals[1] + 0x30);
 
             setLeds(inputVal);
 
             // Draw the new character to the display
             Graphics_drawStringCentered(&g_sContext, cutVals, 2, 48, 65,
-            OPAQUE_TEXT);
+            TRANSPARENT_TEXT);
 
             // Refresh the display so it shows the new data
             Graphics_flushBuffer(&g_sContext);
@@ -185,27 +197,34 @@ void main(void)
 
             dealHand(inputVal);
 
+            populateHandCPU(deck[0]);
+            populateHandPlayer(deck[1]);
+            //populateHandCPU(deck[2]);
+            populateHandPlayer(deck[3]);
+
             //Display Deal
+            while (once == 1){
             Graphics_drawStringCentered(&g_sContext, "CPU Hand:",
                                         AUTO_STRING_LENGTH, 48, 15,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, handCPU, 2, 48, 25,
-                                        OPAQUE_TEXT);
-            Graphics_drawStringCentered(&g_sContext, "XXX:", AUTO_STRING_LENGTH,
+            Graphics_drawStringCentered(&g_sContext, dispArrayCPU, 4, 48, 25,
+                                        TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "XXX", AUTO_STRING_LENGTH,
                                         48, 35, TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "Your Hand:",
                                         AUTO_STRING_LENGTH, 48, 55,
                                         TRANSPARENT_TEXT);
-            Graphics_drawStringCentered(&g_sContext, (handPlayer[0] + '0'), 1, 48, 65,
-                                        OPAQUE_TEXT);
-            Graphics_drawStringCentered(&g_sContext, (handPlayer[1] + '0'), 1, 48, 75,
-                                        OPAQUE_TEXT);
+           Graphics_drawStringCentered(&g_sContext, dispArrayPlayer, 8, 48, 65,
+                                        TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "'#' to Cont.",
                                         AUTO_STRING_LENGTH, 48, 85,
                                         TRANSPARENT_TEXT);
 
             // Refresh the display so it shows the new data
             Graphics_flushBuffer(&g_sContext);
+            once = 0;
+
+            }// end while once loop
 
             if (currKey == '#')
             {
@@ -393,25 +412,27 @@ void swDelay(char numLoops)
     }
 }
 
-//0-12 = A-K Hearts, 13-25 = Clubs, 26-38 = Diamonds, 39-51 = Spades
 /*Checking Suit*/
-unsigned char* checkSuit(int card)
+//Returns the suit of the card in ascii to be put in dispArray
+unsigned char checkSuit(int card)
 {
-    if (card >= 0 && card <= 12)
+    card = card/13;
+
+    if (card >= 0 && card < 1)
     {
-        return suit[0][0];
+        return 'H';
     }
-    else if (card >= 13 && card <= 25)
+    else if (card >= 1 && card < 2)
     {
-        return suit[1][0];
+        return 'C';
     }
-    else if (card >= 26 && card <= 38)
+    else if (card >= 2 && card <= 3)
     {
-        return suit[2][0];
+        return 'S';
     }
-    else if (card >= 39 && card <= 51)
+    else if (card >= 3 && card < 4)
     {
-        return suit[3][0];
+        return 'D';
     }
 
 
@@ -422,7 +443,8 @@ unsigned char* checkSuit(int card)
 int checkCard(int cardInput)
 {
     card = cardInput % 13;
-    if (card > 0 && card < 10)
+
+    if (card > 0 && card < 9)
     {
         cardVal = card + 1;
     }
@@ -430,7 +452,7 @@ int checkCard(int cardInput)
     {
         cardVal = 1;
     }
-    else if (card >= 10)
+    else if (card >= 9)
     {
         cardVal = 10;
     }
@@ -443,7 +465,7 @@ void dealHand(int cutNum)
     int n = 11;
    /* Initializes random number generator */
     srand((unsigned) cutNum);
-    for( i = 0 ; i < n ; i++ )
+    for(i = 0 ; i < n ; i++)
     {
         num = rand() % 52;
         for(j = 0; j < 52; j++)
@@ -453,15 +475,94 @@ void dealHand(int cutNum)
                 deck[i] = num;
             }
         }
-   }
-
-   handPlayer[0] = deck[0] % 13; //need to convert to ascii
-   handCPU[0] = deck[1] % 13;
-   handPlayer[1] = deck[2] % 13;
-   handCPU[1] = deck[3] % 13;
+    }
 
 }
 
+//inputCard comes from dealHand
+//Returns the number value of the card in ascii to be put in dispArray
+unsigned char getVal(int inputCard){
 
+    mod13Card = inputCard % 13;
+
+    cardVal = checkCard(inputCard);
+
+    unsigned char printVal;
+
+    if (mod13Card < 10 && mod13Card >= 1){
+        printVal = mod13Card + 0x31;
+    }
+
+    else if (mod13Card == 0){
+        printVal = 'A';
+    }
+
+    else if (cardVal == 10){
+        if (mod13Card == 9)
+            printVal = 'T';
+        else if (mod13Card == 10)
+            printVal = 'J';
+        else if (mod13Card == 11)
+            printVal = 'Q';
+        else if (mod13Card == 12)
+            printVal = 'K';
+    }
+
+    return printVal;
+}
+
+void populateHandPlayer(int inputCard)//12 //26
+{
+    for(k = 0; k < 4; k++)
+    {
+        if(k  == 0)
+        {
+            dispArrayPlayer[arrayValPlayer] = getVal(inputCard);//'K' //
+            arrayValPlayer++;
+        }
+        else if(k == 1)
+        {
+            dispArrayPlayer[arrayValPlayer] = '-';//-
+            arrayValPlayer++;
+        }
+        else if(k == 2)
+        {
+            dispArrayPlayer[arrayValPlayer] = checkSuit(inputCard);//'H'
+            arrayValPlayer++;
+        }
+        else if(k == 3)
+        {
+            dispArrayPlayer[arrayValPlayer] = ' ';//
+            arrayValPlayer++;
+        }
+    }
+}
+
+void populateHandCPU(int inputCard)//12 //26
+{
+    for(k = 0; k < 4; k++)
+    {
+        if(k  == 0)
+        {
+            dispArrayCPU[arrayValCPU] = getVal(inputCard);//'K' //
+            arrayValCPU++;
+        }
+        else if(k == 1)
+        {
+            dispArrayCPU[arrayValCPU] = '-';//-
+            arrayValCPU++;
+        }
+        else if(k == 2)
+        {
+            dispArrayCPU[arrayValCPU] = checkSuit(inputCard);//'H'
+            arrayValCPU++;
+        }
+        else if(k == 3)
+        {
+            dispArrayCPU[arrayValCPU] = ' ';//
+            arrayValCPU++;
+        }
+    }
+}
 
 
